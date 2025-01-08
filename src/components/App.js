@@ -1,120 +1,79 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import SearchEngine from "./SearchEngine";
-import Forecast from "./Forecast";
-
-import "../styles.css";
-import '@fortawesome/fontawesome-free/css/all.min.css';
+import { AlertCircle } from 'lucide-react';
+import WeatherCard from "./WeatherCard";
+import HourlyForecast from "./HourlyForecast"
+import WeatherAlerts from "./WeatherAlerts";
+import SearchBar from "./SearchBar";
+import WeatherMap from "./WeatherMap";
+import WeatherStats from "./weatherstats";
 
 function App() {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState("London");
+  const [unit, setUnit] = useState("metric"); // Add temperature unit toggle
   const [weather, setWeather] = useState({
     loading: true,
     data: {},
     error: false
   });
 
-  const toDate = () => {
-    const months = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December"
-    ];
-    const days = [
-      "Sunday",
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday"
-    ];
+  const search = async (searchQuery) => {
+    setWeather({ ...weather, loading: true });
+    const apiKey = process.env.REACT_APP_WEATHER_API_KEY;
+    const url = `https://api.openweathermap.org/data/2.5/weather?q=${searchQuery}&appid=${apiKey}&units=${unit}`;
 
-    const currentDate = new Date();
-    const date = `${days[currentDate.getDay()]} ${currentDate.getDate()} ${months[currentDate.getMonth()]
-      }`;
-    return date;
-  };
-  //new search function
-  const search = async (event) => {
-    console.log("API Key:", process.env.REACT_APP_WEATHER_API_KEY);
-
-    event.preventDefault();
-    if (event.type === "click" || (event.type === "keypress" && event.key === "Enter")) {
-      setWeather({ ...weather, loading: true });
-      const apiKey = process.env.REACT_APP_WEATHER_API_KEY;
-      
-      const url = `https://api.shecodes.io/weather/v1/current?query=${query}&key=${apiKey}`;
-
-      await axios
-        .get(url)
-        .then((res) => {
-          console.log("res", res);
-          setWeather({ data: res.data, loading: false, error: false });
-        })
-        .catch((error) => {
-          setWeather({ ...weather, data: {}, error: true });
-          console.log("error", error);
-        });
+    try {
+      const response = await axios.get(url);
+      setWeather({ data: response.data, loading: false, error: false });
+      setQuery(searchQuery);
+    } catch (error) {
+      setWeather({ ...weather, data: {}, error: true, loading: false });
     }
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      const apiKey = process.env.REACT_APP_WEATHER_API_KEY;
-      const url = `https://api.shecodes.io/weather/v1/current?query=Rabat&key=${apiKey}`;
-
-      try {
-        const response = await axios.get(url);
-        setWeather({ data: response.data, loading: false, error: false });
-      } catch (error) {
-        setWeather({ data: {}, loading: false, error: true });
-        console.log("error", error);
-      }
-    };
-
-    fetchData();
-  }, []);
+    search(query);
+  }, [unit]); // Refetch when unit changes
 
   return (
-    <div className="App">
+    <div className="min-h-screen bg-gradient-to-br from-blue-400 to-purple-500 p-4">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="bg-white/20 backdrop-blur-lg rounded-xl p-6 shadow-lg">
+          <SearchBar onSearch={search} />
+          
+          {weather.error && (
+            <div className="flex items-center justify-center gap-2 text-red-500 mt-4">
+              <AlertCircle />
+              <p>City not found. Please try again.</p>
+            </div>
+          )}
 
-      {/* SearchEngine component */}
-      <SearchEngine query={query} setQuery={setQuery} search={search} />
-
-      {weather.loading && (
-        <>
-          <br />
-          <br />
-          <h4>Searching..</h4>
-        </>
-      )}
-
-      {weather.error && (
-        <>
-          <br />
-          <br />
-          <span className="error-message">
-            <span style={{ fontFamily: "font" }}>
-              Sorry city not found, please try again.
-            </span>
-          </span>
-        </>
-      )}
-
-      {weather && weather.data && weather.data.condition && (
-        // Forecast component
-        <Forecast weather={weather} toDate={toDate} />
-      )}
+          {weather.loading ? (
+            <div className="flex justify-center py-20">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+            </div>
+          ) : (
+            !weather.error && (
+              <div className="space-y-6">
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => setUnit(unit === "metric" ? "imperial" : "metric")}
+                    className="px-4 py-2 bg-white/30 rounded-lg hover:bg-white/40 transition"
+                  >
+                    Switch to {unit === "metric" ? "°F" : "°C"}
+                  </button>
+                </div>
+                
+                <WeatherCard weather={weather} unit={unit} />
+                <WeatherStats weather={weather} unit={unit} />
+                <HourlyForecast weather={weather} unit={unit} />
+                <WeatherAlerts location={query} />
+                <WeatherMap location={query} weather={weather} />
+              </div>
+            )
+          )}
+        </div>
+      </div>
     </div>
   );
 }
