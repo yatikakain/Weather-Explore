@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import ReactAnimatedWeather from "react-animated-weather";
 
-
 function Forecast({ weather }) {
   const { data } = weather;
   const [forecastData, setForecastData] = useState([]);
@@ -72,24 +71,26 @@ function Forecast({ weather }) {
         <span>{getCurrentDate()}</span>
       </div>
       <div className="temp">
-        {data.condition.icon_url && (
+        {data.condition.icon_url ? (
           <img
             src={data.condition.icon_url}
             alt={data.condition.description}
             className="temp-icon"
           />
+        ) : (
+          <div className="temp-icon-placeholder">🌤️</div> // Default placeholder icon
         )}
         {renderTemperature(data.temperature.current)}
         <sup className="temp-deg" onClick={toggleTemperatureUnit}>
           {isCelsius ? "°C" : "°F"} | {isCelsius ? "°F" : "°C"}
         </sup>
       </div>
-      <p className="weather-des">{data.condition.description}</p>
+      <p className="weather-des">{data.condition.description || "No description available"}</p>
       <div className="weather-info">
         <div className="col">
           <ReactAnimatedWeather icon="WIND" size="40"/>
           <div>
-            <p className="wind">{data.wind.speed}m/s</p>
+            <p className="wind">{data.wind.speed} m/s</p>
             <p>Wind speed</p>
           </div>
         </div>
@@ -98,9 +99,27 @@ function Forecast({ weather }) {
           <div>
             <p className="humidity">{data.temperature.humidity}%</p>
             <p>Humidity</p>
-        </div>
+          </div>
         </div>
       </div>
+      {/* Render forecast data if available */}
+      {forecastData.length > 0 && (
+        <div className="forecast">
+          <h3>7-Day Forecast</h3>
+          <div className="forecast-list">
+            {forecastData.map((day, index) => (
+              <div key={index} className="forecast-item">
+                <p>{formatDay(day.time)}</p>
+                <img
+                  src={day.condition.icon_url || "default-icon-url"}
+                  alt={day.condition.description || "No description"}
+                />
+                <p>{renderTemperature(day.temperature.day)}°</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }        
