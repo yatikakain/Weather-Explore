@@ -61,6 +61,12 @@ function Forecast({ weather }) {
     }
   };
 
+  const formatTime = (timestamp) => {
+    if (!timestamp) return '--:--';
+    const date = new Date(timestamp * 1000); // Convert seconds to milliseconds
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   return (
     <div>
       <div className="city-name">
@@ -98,7 +104,32 @@ function Forecast({ weather }) {
           <div>
             <p className="humidity">{data.temperature.humidity}%</p>
             <p>Humidity</p>
+          </div>
         </div>
+        {/* Sunrise */}
+        <div className="col">
+          <ReactAnimatedWeather icon="CLEAR_DAY" size="40"/>
+          <div>
+            <p className="sunrise">
+              {forecastData.length > 0 
+                ? formatTime(forecastData[0].sunrise)
+                : '--:--'}
+            </p>
+            <p>Sunrise</p>
+          </div>
+        </div>
+
+        {/* Sunset */}
+        <div className="col">
+          <ReactAnimatedWeather icon="CLEAR_NIGHT" size="40"/>
+          <div>
+            <p className="sunset">
+              {forecastData.length > 0 
+                ? formatTime(forecastData[0].sunset)
+                : '--:--'}
+            </p>
+            <p>Sunset</p>
+          </div>
         </div>
       </div>
     </div>
